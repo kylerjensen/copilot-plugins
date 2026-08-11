@@ -4,22 +4,22 @@
     "PostToolUse": [
       {
         "type": "command",
-        "command": "./scripts/log-lesson.sh",
-        "timeout": 10
+        "bash": "./scripts/log-lesson.sh",
+        "timeoutSec": 10
       }
     ],
     "ErrorOccurred": [
       {
         "type": "command",
-        "command": "./scripts/log-lesson.sh",
-        "timeout": 10
+        "bash": "./scripts/log-lesson.sh",
+        "timeoutSec": 10
       }
     ],
     "SessionStart": [
       {
         "type": "command",
-        "command": "./scripts/inject-lessons.sh",
-        "timeout": 10
+        "bash": "./scripts/inject-lessons.sh",
+        "timeoutSec": 10
       }
     ]
   }

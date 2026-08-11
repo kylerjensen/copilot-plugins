@@ -4,8 +4,8 @@
     "PostToolUse": [
       {
         "type": "command",
-        "command": "./scripts/post-push-pr-maintenance.sh",
-        "timeout": 15
+        "bash": "./scripts/post-push-pr-maintenance.sh",
+        "timeoutSec": 10
       }
     ]
   }
