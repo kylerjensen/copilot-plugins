@@ -1,0 +1,22 @@
+{
+  "name": "auto-pr-maintenance",
+  "description": "Automatically keeps your PR description accurate and review threads resolved after every git push. A PostToolUse hook detects pushes to branches with open PRs and reminds the agent to run the post-push-pr-maintenance skill, which reconciles the description with the current diff and handles automated reviewer threads.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Kyler Jensen"
+  },
+  "homepage": "https://github.com/kylerjensen/copilot-plugins/tree/main/plugins/auto-pr-maintenance",
+  "repository": "https://github.com/kylerjensen/copilot-plugins",
+  "license": "MIT",
+  "keywords": ["pull-request", "github", "code-review", "hooks", "copilot-cli"],
+  "skills": ["skills/"],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "bash": "\"${PLUGIN_ROOT}/scripts/post-push-pr-maintenance.sh\"",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}
