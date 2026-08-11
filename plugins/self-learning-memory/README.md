@@ -29,22 +29,22 @@ plugins/self-learning-memory/
 └── hooks/
     ├── hooks.json                   # PostToolUse, ErrorOccurred, SessionStart
     └── scripts/
-        ├── log-lesson.mjs           # PostToolUse / ErrorOccurred → lessons.jsonl
-        ├── inject-lessons.mjs       # SessionStart → injects distilled.md
-        └── distill-lessons.mjs      # manual/cron → condenses failures
+        ├── log-lesson.sh            # PostToolUse / ErrorOccurred → lessons.jsonl
+        ├── inject-lessons.sh        # SessionStart → injects distilled.md
+        └── distill-lessons.sh       # manual/cron → condenses failures
 ```
 
 Hook commands resolve scripts via `${CLAUDE_PLUGIN_ROOT}`, the plugin's installation directory. Both Copilot CLI and the VS Code Copilot extension substitute this variable; `${COPILOT_PLUGIN_ROOT}` is CLI-only and expands to an empty string under VS Code. Data still lives outside the plugin, under `~/.copilot-lessons/` (override with `COPILOT_LESSONS_DIR`), so lessons survive plugin reinstalls and updates.
 
-Node.js must be on `PATH` for the hooks to run.
+Scripts are bash, invoked directly (executable bit set), and require `jq` on `PATH`.
 
-**Verify hooks:** trigger a failing tool call, then check `~/.copilot-lessons/lessons.jsonl`. Hooks are preview — payload field names shift between versions; `log-lesson.mjs` reads both camelCase and snake_case, but if nothing logs, inspect the actual payload in the hooks output/log and adjust `pick()` keys.
+**Verify hooks:** trigger a failing tool call, then check `~/.copilot-lessons/lessons.jsonl`. Hooks are preview — payload field names shift between versions; `log-lesson.sh` reads both camelCase and snake_case, but if nothing logs, inspect the actual payload in the hooks output/log and adjust the `pick()` keys.
 
 ## Run the distillery
 
 ```bash
-node ~/.copilot/installed-plugins/kylerjensen/self-learning-memory/hooks/scripts/distill-lessons.mjs        # mechanical
-node ~/.copilot/installed-plugins/kylerjensen/self-learning-memory/hooks/scripts/distill-lessons.mjs --llm  # + Copilot CLI rewrite
+~/.copilot/installed-plugins/kylerjensen/self-learning-memory/hooks/scripts/distill-lessons.sh        # mechanical
+~/.copilot/installed-plugins/kylerjensen/self-learning-memory/hooks/scripts/distill-lessons.sh --llm  # + Copilot CLI rewrite
 ```
 
 Weekly cron/Task Scheduler is plenty. Output goes to `~/.copilot-lessons/distilled.md`, which `inject-lessons.mjs` feeds into each new session (capped ~4k chars).
