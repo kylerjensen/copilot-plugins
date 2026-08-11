@@ -4,7 +4,7 @@
     "PostToolUse": [
       {
         "type": "command",
-        "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-push-pr-maintenance.sh\"",
+        "command": "for d in \"$HOME/.copilot/installed-plugins\"/*/auto-pr-maintenance \"$HOME/.vscode/agent-plugins\"/*/*/*/plugins/auto-pr-maintenance; do if [ -x \"$d/hooks/scripts/post-push-pr-maintenance.sh\" ]; then exec \"$d/hooks/scripts/post-push-pr-maintenance.sh\"; fi; done; true",
         "timeout": 15
       }
     ]
