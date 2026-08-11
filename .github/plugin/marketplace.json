@@ -1,0 +1,32 @@
+{
+  "name": "kylerjensen",
+  "owner": {
+    "name": "Kyler Jensen",
+    "url": "https://github.com/kylerjensen"
+  },
+  "metadata": {
+    "description": "Kyler Jensen's Copilot plugins",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "self-learning-memory",
+      "description": "Self-learning memory: logs failed tool calls, distills them into caveman lessons, injects at session start. Includes memory-hygiene skill.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Kyler Jensen"
+      },
+      "homepage": "https://github.com/kylerjensen/copilot-plugins/tree/main/plugins/self-learning-memory",
+      "repository": "https://github.com/kylerjensen/copilot-plugins",
+      "license": "MIT",
+      "keywords": [
+        "memory",
+        "hooks",
+        "lessons",
+        "self-learning",
+        "copilot-cli"
+      ],
+      "source": "./plugins/self-learning-memory"
+    }
+  ]
+}

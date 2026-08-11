@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "node \"${COPILOT_PLUGIN_ROOT}/hooks/scripts/log-lesson.mjs\"",
+        "timeoutSec": 10
+      }
+    ],
+    "ErrorOccurred": [
+      {
+        "type": "command",
+        "command": "node \"${COPILOT_PLUGIN_ROOT}/hooks/scripts/log-lesson.mjs\"",
+        "timeoutSec": 10
+      }
+    ],
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "node \"${COPILOT_PLUGIN_ROOT}/hooks/scripts/inject-lessons.mjs\"",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}
