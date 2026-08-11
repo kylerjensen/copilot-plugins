@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "bash": "\"${PLUGIN_ROOT}/scripts/log-lesson.sh\"",
+        "timeoutSec": 10
+      }
+    ],
+    "ErrorOccurred": [
+      {
+        "type": "command",
+        "bash": "\"${PLUGIN_ROOT}/scripts/log-lesson.sh\"",
+        "timeoutSec": 10
+      }
+    ],
+    "SessionStart": [
+      {
+        "type": "command",
+        "bash": "\"${PLUGIN_ROOT}/scripts/inject-lessons.sh\"",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}

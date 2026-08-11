@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "bash": "\"${PLUGIN_ROOT}/scripts/post-push-pr-maintenance.sh\"",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}

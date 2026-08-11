@@ -10,27 +10,5 @@
   "license": "MIT",
   "keywords": ["memory", "hooks", "lessons", "self-learning", "copilot-cli"],
   "skills": ["skills/"],
-  "hooks": {
-    "PostToolUse": [
-      {
-        "type": "command",
-        "bash": "\"${CLAUDE_PLUGIN_ROOT}/scripts/log-lesson.sh\"",
-        "timeoutSec": 10
-      }
-    ],
-    "ErrorOccurred": [
-      {
-        "type": "command",
-        "bash": "\"${CLAUDE_PLUGIN_ROOT}/scripts/log-lesson.sh\"",
-        "timeoutSec": 10
-      }
-    ],
-    "SessionStart": [
-      {
-        "type": "command",
-        "bash": "\"${CLAUDE_PLUGIN_ROOT}/scripts/inject-lessons.sh\"",
-        "timeoutSec": 10
-      }
-    ]
-  }
+  "hooks": "hooks.json"
 }

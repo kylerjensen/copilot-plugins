@@ -24,7 +24,8 @@ Or, in an interactive session, `/skills list` should show `caveman-memory`.
 
 ```text
 plugins/self-learning-memory/
-├── .claude-plugin/plugin.json       # manifest + hooks: PostToolUse, ErrorOccurred, SessionStart
+├── plugin.json                      # manifest, points "hooks" at hooks.json
+├── hooks.json                       # hooks: PostToolUse, ErrorOccurred, SessionStart
 ├── skills/caveman-memory/SKILL.md   # memory protocol + hygiene rules
 └── scripts/
     ├── log-lesson.sh                # PostToolUse / ErrorOccurred → lessons.jsonl
@@ -32,7 +33,7 @@ plugins/self-learning-memory/
     └── distill-lessons.sh           # manual/cron → condenses failures
 ```
 
-Hook commands resolve scripts via `${CLAUDE_PLUGIN_ROOT}`, the plugin's installation directory. The manifest lives at `.claude-plugin/plugin.json` rather than the repo root on purpose: a root `plugin.json` (Copilot format) never expands the plugin-root token, so bundled scripts fail to resolve — see [microsoft/vscode#307478](https://github.com/microsoft/vscode/issues/307478). `.claude-plugin/plugin.json` selects the Claude format, which does expand it, and Copilot CLI also finds a manifest at that path. Data lives outside the plugin, under `~/.copilot-lessons/` (override with `COPILOT_LESSONS_DIR`), so lessons survive plugin reinstalls and updates.
+Hook commands resolve scripts via `${PLUGIN_ROOT}`, the plugin's installation directory. This is the standard Copilot plugin layout: root `plugin.json` with `"hooks": "hooks.json"` pointing at a sibling `hooks.json`. Data lives outside the plugin, under `~/.copilot-lessons/` (override with `COPILOT_LESSONS_DIR`), so lessons survive plugin reinstalls and updates.
 
 Scripts are bash, invoked directly (executable bit set), and require `jq` on `PATH`.
 

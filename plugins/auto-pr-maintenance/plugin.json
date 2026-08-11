@@ -10,13 +10,5 @@
   "license": "MIT",
   "keywords": ["pull-request", "github", "code-review", "hooks", "copilot-cli"],
   "skills": ["skills/"],
-  "hooks": {
-    "PostToolUse": [
-      {
-        "type": "command",
-        "bash": "\"${CLAUDE_PLUGIN_ROOT}/scripts/post-push-pr-maintenance.sh\"",
-        "timeoutSec": 10
-      }
-    ]
-  }
+  "hooks": "hooks.json"
 }
