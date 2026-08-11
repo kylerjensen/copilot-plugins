@@ -4,7 +4,7 @@
     "PostToolUse": [
       {
         "type": "command",
-        "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-push-pr-maintenance.sh\"",
+        "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-push-pr-maintenance.sh\"",
         "timeout": 15
       }
     ]
