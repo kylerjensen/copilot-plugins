@@ -24,14 +24,14 @@ Requirements: `gh` (authenticated), `jq`, `git`.
 After install, the hook script lives at:
 
 ```
-~/.copilot/installed-plugins/kylerjensen/auto-pr-maintenance/hooks/scripts/post-push-pr-maintenance.sh
+~/.copilot/installed-plugins/kylerjensen/auto-pr-maintenance/scripts/post-push-pr-maintenance.sh
 ```
 
 Pipe a synthetic `PostToolUse` payload pointing to a branch with an open PR:
 
 ```bash
 echo '{"tool_input": {"command": "git push origin my-branch"}}' \
-  | bash ~/.copilot/installed-plugins/kylerjensen/auto-pr-maintenance/hooks/scripts/post-push-pr-maintenance.sh
+  | bash ~/.copilot/installed-plugins/kylerjensen/auto-pr-maintenance/scripts/post-push-pr-maintenance.sh
 ```
 
 Expected output when an open PR exists: a JSON object with `systemMessage` and `hookSpecificOutput.additionalContext` containing the PR number and skill name. With no open PR or a merged PR, output is `{"continue": true}`.
