@@ -14,21 +14,21 @@
     "PostToolUse": [
       {
         "type": "command",
-        "bash": "\"${PLUGIN_ROOT}/scripts/log-lesson.sh\"",
+        "bash": "\"${CLAUDE_PLUGIN_ROOT}/scripts/log-lesson.sh\"",
         "timeoutSec": 10
       }
     ],
     "ErrorOccurred": [
       {
         "type": "command",
-        "bash": "\"${PLUGIN_ROOT}/scripts/log-lesson.sh\"",
+        "bash": "\"${CLAUDE_PLUGIN_ROOT}/scripts/log-lesson.sh\"",
         "timeoutSec": 10
       }
     ],
     "SessionStart": [
       {
         "type": "command",
-        "bash": "\"${PLUGIN_ROOT}/scripts/inject-lessons.sh\"",
+        "bash": "\"${CLAUDE_PLUGIN_ROOT}/scripts/inject-lessons.sh\"",
         "timeoutSec": 10
       }
     ]
