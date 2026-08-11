@@ -8,13 +8,7 @@
   "homepage": "https://github.com/kylerjensen/copilot-plugins/tree/main/plugins/auto-pr-maintenance",
   "repository": "https://github.com/kylerjensen/copilot-plugins",
   "license": "MIT",
-  "keywords": [
-    "pull-request",
-    "github",
-    "code-review",
-    "hooks",
-    "copilot-cli"
-  ],
+  "keywords": ["pull-request", "github", "code-review", "hooks", "copilot-cli"],
   "skills": ["skills/"],
   "hooks": "hooks/hooks.json"
 }

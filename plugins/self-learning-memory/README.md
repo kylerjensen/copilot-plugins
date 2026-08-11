@@ -34,7 +34,7 @@ plugins/self-learning-memory/
         └── distill-lessons.mjs      # manual/cron → condenses failures
 ```
 
-Hook commands resolve scripts via `${COPILOT_PLUGIN_ROOT}`, the plugin's installation directory. Data still lives outside the plugin, under `~/.copilot-lessons/` (override with `COPILOT_LESSONS_DIR`), so lessons survive plugin reinstalls and updates.
+Hook commands resolve scripts via `${CLAUDE_PLUGIN_ROOT}`, the plugin's installation directory. Both Copilot CLI and the VS Code Copilot extension substitute this variable; `${COPILOT_PLUGIN_ROOT}` is CLI-only and expands to an empty string under VS Code. Data still lives outside the plugin, under `~/.copilot-lessons/` (override with `COPILOT_LESSONS_DIR`), so lessons survive plugin reinstalls and updates.
 
 Node.js must be on `PATH` for the hooks to run.
 
@@ -57,7 +57,7 @@ User memory auto-loads only its first 200 lines, so the skill enforces a tiered 
 - **Hot zone (~175 lines):** frequent, recent, cross-project lessons
 - **Cold zone (below 200):** rare lessons — not auto-loaded, but the agent is instructed to read the full file when the index hints something relevant
 
-This works because memory is a real file the agent can read past line 200 on demand — the cap only limits what's *automatic*. The index makes those cold lines discoverable instead of invisible. The distilled.md → memory promotion path (noted in the distillery header) keeps the durable store curated rather than append-only.
+This works because memory is a real file the agent can read past line 200 on demand — the cap only limits what's _automatic_. The index makes those cold lines discoverable instead of invisible. The distilled.md → memory promotion path (noted in the distillery header) keeps the durable store curated rather than append-only.
 
 ## Lifecycle of a lesson
 
