@@ -24,7 +24,7 @@ Or, in an interactive session, `/skills list` should show `caveman-memory`.
 
 ```text
 plugins/self-learning-memory/
-├── plugin.json                      # hooks declared inline: PostToolUse, ErrorOccurred, SessionStart
+├── .plugin/plugin.json              # manifest + hooks: PostToolUse, ErrorOccurred, SessionStart
 ├── skills/caveman-memory/SKILL.md   # memory protocol + hygiene rules
 └── scripts/
     ├── log-lesson.sh                # PostToolUse / ErrorOccurred → lessons.jsonl
@@ -32,7 +32,7 @@ plugins/self-learning-memory/
     └── distill-lessons.sh           # manual/cron → condenses failures
 ```
 
-Hook commands resolve scripts via `${PLUGIN_ROOT}`, the plugin's installation directory. The hooks are declared **inline in `plugin.json`** rather than in a separate `hooks.json`: VS Code only interpolates the plugin-root token on the manifest code path, so hooks in a standalone `hooks.json` fail to resolve bundled scripts there (see [microsoft/vscode#307478](https://github.com/microsoft/vscode/issues/307478)). Copilot CLI handles both. Data lives outside the plugin, under `~/.copilot-lessons/` (override with `COPILOT_LESSONS_DIR`), so lessons survive plugin reinstalls and updates.
+Hook commands resolve scripts via `${PLUGIN_ROOT}`, the plugin's installation directory. The manifest lives at `.plugin/plugin.json` rather than the repo root on purpose: that path selects the Open Plugin format, which is one of the only formats VS Code expands the plugin-root token for. With a root `plugin.json` (Copilot format) the token is left literal and bundled scripts fail to resolve under VS Code — see [microsoft/vscode#307478](https://github.com/microsoft/vscode/issues/307478). Copilot CLI probes `.plugin/plugin.json` first, so one manifest serves both hosts. Data lives outside the plugin, under `~/.copilot-lessons/` (override with `COPILOT_LESSONS_DIR`), so lessons survive plugin reinstalls and updates.
 
 Scripts are bash, invoked directly (executable bit set), and require `jq` on `PATH`.
 
