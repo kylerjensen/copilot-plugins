@@ -4,21 +4,21 @@
     "PostToolUse": [
       {
         "type": "command",
-        "bash": "\"${PLUGIN_ROOT}/scripts/log-lesson.sh\"",
+        "bash": "for d in \"$HOME/.copilot/installed-plugins\"/*/self-learning-memory \"$HOME/.vscode/agent-plugins\"/*/*/*/plugins/self-learning-memory; do s=\"$d/scripts/log-lesson.sh\"; [ -x \"$s\" ] && exec \"$s\"; done; true",
         "timeoutSec": 10
       }
     ],
     "ErrorOccurred": [
       {
         "type": "command",
-        "bash": "\"${PLUGIN_ROOT}/scripts/log-lesson.sh\"",
+        "bash": "for d in \"$HOME/.copilot/installed-plugins\"/*/self-learning-memory \"$HOME/.vscode/agent-plugins\"/*/*/*/plugins/self-learning-memory; do s=\"$d/scripts/log-lesson.sh\"; [ -x \"$s\" ] && exec \"$s\"; done; true",
         "timeoutSec": 10
       }
     ],
     "SessionStart": [
       {
         "type": "command",
-        "bash": "\"${PLUGIN_ROOT}/scripts/inject-lessons.sh\"",
+        "bash": "for d in \"$HOME/.copilot/installed-plugins\"/*/self-learning-memory \"$HOME/.vscode/agent-plugins\"/*/*/*/plugins/self-learning-memory; do s=\"$d/scripts/inject-lessons.sh\"; [ -x \"$s\" ] && exec \"$s\"; done; true",
         "timeoutSec": 10
       }
     ]
