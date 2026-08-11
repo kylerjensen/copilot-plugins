@@ -3,12 +3,13 @@
 # Reads hook JSON from stdin. If the tool call looks like a failure,
 # appends a compact record to ~/.copilot-lessons/lessons.jsonl.
 #
-# Also auto-triggers the distillery in the background once lessons.jsonl
-# has grown large or stale — checked here (not in inject-lessons.sh /
-# SessionStart) because this is the only point where the log's size can
-# have just changed, and it's rare enough (failures only) not to add
-# meaningful overhead. Never blocks: distill-lessons.sh runs detached and
-# this hook still exits immediately after appending its own record.
+# Also reminds the agent (via additionalContext) to distill the backlog —
+# review it, group real recurring lessons, write the useful ones into
+# memory itself — once lessons.jsonl has grown large or stale. Checked
+# here rather than on SessionStart because this is the only point where
+# the log's size can have just changed. The agent does the actual
+# distillation judgment call (via the caveman-memory skill); this hook
+# only notices there's a backlog and says so.
 #
 # Defensive about field names: VS Code / Copilot CLI use a mix of
 # camelCase and snake_case depending on version. Verify actual payloads
@@ -19,28 +20,29 @@ DIR="${COPILOT_LESSONS_DIR:-$HOME/.copilot-lessons}"
 LOG="$DIR/lessons.jsonl"
 MAX_SNIPPET=400
 
-# Auto-distill thresholds: fire when either is exceeded.
-AUTO_DISTILL_MIN_LINES="${SELF_LEARNING_MEMORY_AUTO_DISTILL_MIN_LINES:-25}"
-AUTO_DISTILL_MAX_AGE_DAYS="${SELF_LEARNING_MEMORY_AUTO_DISTILL_MAX_AGE_DAYS:-7}"
-# Don't re-launch more than once per cooldown, even if the backlog persists
-# (e.g. --llm unavailable) — avoids spawning a background process every call.
-AUTO_DISTILL_COOLDOWN_SEC=3600
+# Reminder thresholds: nudge the agent when either is exceeded.
+DISTILL_REMINDER_MIN_LINES="${SELF_LEARNING_MEMORY_DISTILL_REMINDER_MIN_LINES:-25}"
+DISTILL_REMINDER_MAX_AGE_DAYS="${SELF_LEARNING_MEMORY_DISTILL_REMINDER_MAX_AGE_DAYS:-7}"
+# Don't re-nag more than once per cooldown, even if the backlog persists
+# (agent may be mid-task) — avoids repeating the reminder on every failure.
+DISTILL_REMINDER_COOLDOWN_SEC=3600
 
-maybe_auto_distill() {
-  local auto_marker="$DIR/.last-auto-distill"
+# Returns the reminder text on stdout when a nudge is due, empty otherwise.
+maybe_distill_reminder() {
+  local marker="$DIR/.last-distill-reminder"
   [[ -s "$LOG" ]] || return 0
 
   local now cooldown_until
   now="$(date -u +%s)"
-  if [[ -f "$auto_marker" ]]; then
-    cooldown_until=$(( $(cat "$auto_marker" 2>/dev/null || echo 0) + AUTO_DISTILL_COOLDOWN_SEC ))
+  if [[ -f "$marker" ]]; then
+    cooldown_until=$(( $(cat "$marker" 2>/dev/null || echo 0) + DISTILL_REMINDER_COOLDOWN_SEC ))
     [[ "$now" -lt "$cooldown_until" ]] && return 0
   fi
 
-  local line_count oldest_ts oldest_epoch age_days should_run=false
+  local line_count oldest_ts oldest_epoch age_days should_remind=false
   line_count="$(grep -c '' "$LOG" 2>/dev/null || echo 0)"
-  if [[ "$line_count" -ge "$AUTO_DISTILL_MIN_LINES" ]]; then
-    should_run=true
+  if [[ "$line_count" -ge "$DISTILL_REMINDER_MIN_LINES" ]]; then
+    should_remind=true
   else
     oldest_ts="$(head -n1 "$LOG" | jq -r '.ts // empty' 2>/dev/null)"
     if [[ -n "$oldest_ts" ]]; then
@@ -48,21 +50,15 @@ maybe_auto_distill() {
       oldest_epoch="$(date -u -d "$oldest_ts" +%s 2>/dev/null || date -u -j -f "%Y-%m-%dT%H:%M:%S" "${oldest_ts%%.*}" +%s 2>/dev/null || echo 0)"
       if [[ "$oldest_epoch" -gt 0 ]]; then
         age_days=$(( (now - oldest_epoch) / 86400 ))
-        [[ "$age_days" -ge "$AUTO_DISTILL_MAX_AGE_DAYS" ]] && should_run=true
+        [[ "$age_days" -ge "$DISTILL_REMINDER_MAX_AGE_DAYS" ]] && should_remind=true
       fi
     fi
   fi
 
-  [[ "$should_run" == true ]] || return 0
+  [[ "$should_remind" == true ]] || return 0
 
-  local script_dir distill_script
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  distill_script="$script_dir/distill-lessons.sh"
-  [[ -x "$distill_script" ]] || return 0
-
-  echo "$now" > "$auto_marker"
-  nohup "$distill_script" >/dev/null 2>&1 &
-  disown 2>/dev/null || true
+  echo "$now" > "$marker"
+  echo "You have $line_count unreviewed tool-failure records in $LOG. Distill it: read it, group real recurring lessons, and write the genuinely useful ones into user/repo memory via the caveman-memory skill (terse, one line each). Then truncate $LOG of the entries you've reviewed. This is mechanical, low-stakes work that doesn't need your main context or a strong model — delegate it to the 'task' subagent so it runs without consuming this conversation's tokens."
 }
 
 # jq is required for payload parsing and safe JSON construction; skip silently if missing.
@@ -149,6 +145,9 @@ jq -nc \
   --arg error "$error_redacted" \
   '{ts: $ts, event: $event, cwd: $cwd, tool: $tool, input: $input, error: $error}' >> "$LOG" 2>/dev/null
 
-maybe_auto_distill
+reminder="$(maybe_distill_reminder)"
+if [[ -n "$reminder" ]]; then
+  jq -nc --arg ctx "$reminder" '{additionalContext: $ctx}'
+fi
 
 exit 0

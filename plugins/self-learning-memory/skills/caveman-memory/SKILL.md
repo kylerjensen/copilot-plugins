@@ -18,6 +18,16 @@ Example bad: "I learned that when using the gh api command, the correct flag for
 - User corrected you → save correction.
 - Do NOT save: obvious stuff, one-off values, secrets, things already in memory.
 
+## DISTILLING lessons.jsonl (BACKLOG REVIEW)
+
+`log-lesson.sh` (the self-learning-memory plugin's PostToolUse/ErrorOccurred hook) deterministically appends every failed tool call to `~/.copilot-lessons/lessons.jsonl`, even when you don't reflect on it yourself. When the backlog grows past a threshold, the hook reminds you via `additionalContext` — that's your cue to distill it:
+
+- Read the file, group repeated failures by tool + error shape.
+- Most entries are noise (transient errors, one-offs, or the log's own known false-positive pattern where it captures an echoed command as if it were error output). Only write a memory line for a lesson that's real, non-obvious, and likely to recur.
+- Write survivors into user/repo memory per the scope rules above, in caveman format.
+- Truncate `lessons.jsonl` (or the entries you've reviewed) once done — don't leave it to grow unbounded.
+- This is mechanical, low-stakes work that doesn't need your main context or a strong model. Delegate it to a subagent (the built-in `task` agent) rather than doing it inline, so the review itself doesn't consume this conversation's tokens.
+
 ## SCOPE RULES
 
 **Repo memory** = facts about THIS project:

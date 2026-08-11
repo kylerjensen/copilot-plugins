@@ -3,7 +3,7 @@
 Two complementary layers:
 
 1. **Agent-driven memory** (the `caveman-memory` skill) — Copilot writes its own lessons to the built-in memory tool (user + repo scopes). Handles the "I figured it out, remember it" case.
-2. **Hook-driven lessons pipeline** (deterministic) — every failed tool call is logged to `lessons.jsonl` even when the agent forgets to reflect. A distillery condenses failures into caveman lessons that get injected at session start.
+2. **Hook-driven lessons backlog** (deterministic) — every failed tool call is logged to `lessons.jsonl` even when the agent forgets to reflect. Once the backlog grows large or stale, the hook reminds the agent to distill it — read the raw failures, pick out the real recurring lessons, and write those into memory itself (typically via a delegated `task` subagent, so the review doesn't cost main-conversation tokens).
 
 ## Install
 
@@ -25,12 +25,10 @@ Or, in an interactive session, `/skills list` should show `caveman-memory`.
 ```text
 plugins/self-learning-memory/
 ├── plugin.json                      # manifest, points "hooks" at hooks.json
-├── hooks.json                       # hooks: PostToolUse, ErrorOccurred, SessionStart
-├── skills/caveman-memory/SKILL.md   # memory protocol + hygiene rules
+├── hooks.json                       # hooks: PostToolUse, ErrorOccurred
+├── skills/caveman-memory/SKILL.md   # memory protocol, hygiene rules, backlog distilling
 └── scripts/
-    ├── log-lesson.sh                # PostToolUse / ErrorOccurred → lessons.jsonl
-    ├── inject-lessons.sh            # SessionStart → injects distilled.md
-    └── distill-lessons.sh           # manual/cron → condenses failures
+    └── log-lesson.sh                # PostToolUse / ErrorOccurred → lessons.jsonl + backlog reminder
 ```
 
 Hook commands self-locate the plugin's installed directory at runtime (checking both `~/.copilot/installed-plugins/` and `~/.vscode/agent-plugins/` install layouts) rather than relying on a `${PLUGIN_ROOT}`-style token — VS Code does not expand that token for Copilot-format plugin hooks ([microsoft/vscode#307478](https://github.com/microsoft/vscode/issues/307478)). Data lives outside the plugin, under `~/.copilot-lessons/` (override with `COPILOT_LESSONS_DIR`), so lessons survive plugin reinstalls and updates.
@@ -39,18 +37,11 @@ Scripts are bash, invoked directly (executable bit set), and require `jq` on `PA
 
 **Verify hooks:** trigger a failing tool call, then check `~/.copilot-lessons/lessons.jsonl`. Hooks are preview — payload field names shift between versions; `log-lesson.sh` reads both camelCase and snake_case, but if nothing logs, inspect the actual payload in the hooks output/log and adjust the `pick()` keys.
 
-## Run the distillery
+## Distilling the backlog
 
-`log-lesson.sh` auto-triggers a background distill right after logging a failure, once `lessons.jsonl` has 25+ lines or its oldest record is 7+ days old (override with `SELF_LEARNING_MEMORY_AUTO_DISTILL_MIN_LINES` / `SELF_LEARNING_MEMORY_AUTO_DISTILL_MAX_AGE_DAYS`). Checked on `PostToolUse`/`ErrorOccurred` rather than `SessionStart`, since that's the only point where the log's size could have just changed — `SessionStart` fires once per session regardless of how many failures happen mid-session, so a long session would never re-check. It runs mechanical-only (no `--llm`), detached, and never blocks the hook; a `.last-auto-distill` marker enforces a 1-hour cooldown so a backlog that doesn't clear (e.g. `--llm` unavailable) doesn't respawn a distill on every failure.
+`log-lesson.sh` checks the backlog right after logging a failure — the only point where `lessons.jsonl`'s size could have just changed — and nudges the agent via `additionalContext` once it has 25+ lines or its oldest record is 7+ days old (override with `SELF_LEARNING_MEMORY_DISTILL_REMINDER_MIN_LINES` / `SELF_LEARNING_MEMORY_DISTILL_REMINDER_MAX_AGE_DAYS`). A `.last-distill-reminder` marker enforces a 1-hour cooldown so it nags at most once per hour even if the backlog isn't cleared right away.
 
-Run it manually or on your own schedule (cron/Task Scheduler) for the LLM-polished version:
-
-```bash
-~/.copilot/installed-plugins/kylerjensen/self-learning-memory/scripts/distill-lessons.sh        # mechanical
-~/.copilot/installed-plugins/kylerjensen/self-learning-memory/scripts/distill-lessons.sh --llm  # + Copilot CLI rewrite
-```
-
-Output goes to `~/.copilot-lessons/distilled.md`, which `inject-lessons.sh` feeds into each new session (capped ~4k chars).
+There's no separate distillery script or LLM shell-out: the reminder asks the agent to do the actual review itself, following the "DISTILLING lessons.jsonl" section of the `caveman-memory` skill — group real recurring failures, skip the noise, write survivors straight into user/repo memory, then truncate the reviewed entries. The skill suggests delegating this to a `task` subagent, since it's mechanical work that doesn't need the main conversation's context.
 
 ## The 200-line problem
 
@@ -60,16 +51,16 @@ User memory auto-loads only its first 200 lines, so the skill enforces a tiered 
 - **Hot zone (~175 lines):** frequent, recent, cross-project lessons
 - **Cold zone (below 200):** rare lessons — not auto-loaded, but the agent is instructed to read the full file when the index hints something relevant
 
-This works because memory is a real file the agent can read past line 200 on demand — the cap only limits what's _automatic_. The index makes those cold lines discoverable instead of invisible. The distilled.md → memory promotion path (noted in the distillery header) keeps the durable store curated rather than append-only.
+This works because memory is a real file the agent can read past line 200 on demand — the cap only limits what's _automatic_. The index makes those cold lines discoverable instead of invisible.
 
 ## Lifecycle of a lesson
 
 ```text
 tool call fails ──► log-lesson.sh ──► lessons.jsonl
-                                         │  distill (auto on SessionStart, or cron/manual)
-                                          ▼
-                                    distilled.md ──► injected at SessionStart
-                                          │  agent proves lesson useful
-                                          ▼
+                                         │  backlog crosses threshold
+                                         ▼
+                          hook reminds agent (additionalContext)
+                                         │  agent distills (often via task subagent)
+                                         ▼
                               user/repo memory (durable, caveman, indexed)
 ```
