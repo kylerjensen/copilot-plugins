@@ -33,7 +33,7 @@ plugins/self-learning-memory/
     └── distill-lessons.sh           # manual/cron → condenses failures
 ```
 
-Hook commands resolve scripts via `${PLUGIN_ROOT}`, the plugin's installation directory. This is the standard Copilot plugin layout: root `plugin.json` with `"hooks": "hooks.json"` pointing at a sibling `hooks.json`. Data lives outside the plugin, under `~/.copilot-lessons/` (override with `COPILOT_LESSONS_DIR`), so lessons survive plugin reinstalls and updates.
+Hook commands self-locate the plugin's installed directory at runtime (checking both `~/.copilot/installed-plugins/` and `~/.vscode/agent-plugins/` install layouts) rather than relying on a `${PLUGIN_ROOT}`-style token — VS Code does not expand that token for Copilot-format plugin hooks ([microsoft/vscode#307478](https://github.com/microsoft/vscode/issues/307478)). Data lives outside the plugin, under `~/.copilot-lessons/` (override with `COPILOT_LESSONS_DIR`), so lessons survive plugin reinstalls and updates.
 
 Scripts are bash, invoked directly (executable bit set), and require `jq` on `PATH`.
 
@@ -41,12 +41,16 @@ Scripts are bash, invoked directly (executable bit set), and require `jq` on `PA
 
 ## Run the distillery
 
+`log-lesson.sh` auto-triggers a background distill right after logging a failure, once `lessons.jsonl` has 25+ lines or its oldest record is 7+ days old (override with `SELF_LEARNING_MEMORY_AUTO_DISTILL_MIN_LINES` / `SELF_LEARNING_MEMORY_AUTO_DISTILL_MAX_AGE_DAYS`). Checked on `PostToolUse`/`ErrorOccurred` rather than `SessionStart`, since that's the only point where the log's size could have just changed — `SessionStart` fires once per session regardless of how many failures happen mid-session, so a long session would never re-check. It runs mechanical-only (no `--llm`), detached, and never blocks the hook; a `.last-auto-distill` marker enforces a 1-hour cooldown so a backlog that doesn't clear (e.g. `--llm` unavailable) doesn't respawn a distill on every failure.
+
+Run it manually or on your own schedule (cron/Task Scheduler) for the LLM-polished version:
+
 ```bash
 ~/.copilot/installed-plugins/kylerjensen/self-learning-memory/scripts/distill-lessons.sh        # mechanical
 ~/.copilot/installed-plugins/kylerjensen/self-learning-memory/scripts/distill-lessons.sh --llm  # + Copilot CLI rewrite
 ```
 
-Weekly cron/Task Scheduler is plenty. Output goes to `~/.copilot-lessons/distilled.md`, which `inject-lessons.mjs` feeds into each new session (capped ~4k chars).
+Output goes to `~/.copilot-lessons/distilled.md`, which `inject-lessons.sh` feeds into each new session (capped ~4k chars).
 
 ## The 200-line problem
 
@@ -61,8 +65,8 @@ This works because memory is a real file the agent can read past line 200 on dem
 ## Lifecycle of a lesson
 
 ```text
-tool call fails ──► log-lesson.mjs ──► lessons.jsonl
-                                          │  distill (cron/manual)
+tool call fails ──► log-lesson.sh ──► lessons.jsonl
+                                         │  distill (auto on SessionStart, or cron/manual)
                                           ▼
                                     distilled.md ──► injected at SessionStart
                                           │  agent proves lesson useful
